@@ -1,7 +1,6 @@
 # enVrai en bref
 Un petit programmes en Python pour détecter **les tics de langage** (en vrai, du coup, en gros...). Mais aussi pour s'amuser à **déclencher des sons ou des phrases audio** quand un mot où une expression sont détectés.
-
-<kbd><img width="400" alt="Capture d'écran de l'interface qui présente les statistiques de détection des expressions" src="https://github.com/user-attachments/assets/ffbbd542-b0c4-42d8-a6bd-f86cbc5f1e59" /></kbd>
+<kbd><img width="600" alt="Capture d'écran de l'interface qui présente les statistiques de détection des expressions" src="https://github.com/user-attachments/assets/c29601c3-b03b-436a-833a-b2aea0d186ee" /></kbd>
 
 # enVrai ça marche comment ?
 Le script écoute en continu et transcrit en texte (avec **Whisper**, la bibliothèque open source d'Open AI).
@@ -30,8 +29,7 @@ Avec l'environnement virtuel activé et dans le dossier enVrai :
 ou
 - taper `python main.py --web` pour lancer enVrai et son interface web d'administration
 
-  <img width="400" alt="Capture d'écran du démmarrage d'enVrai dans un terminal" src="https://github.com/user-attachments/assets/2156e24e-d018-4bc8-aebe-5ee8d8c897c4" />
-
+<kbd><img width="400" alt="Capture d'écran du démmarrage d'enVrai dans un terminal" src="https://github.com/user-attachments/assets/2156e24e-d018-4bc8-aebe-5ee8d8c897c4" /></kbd>
 
 # Administration
 Pour accéder à l'admin http://localhost:5010
@@ -53,3 +51,8 @@ L'**interface d'administration web**, permet :
 - Pour **les mp3**
   - de lister les mp3 disponible dans le dossier "mp3"
   - de les écouter
+
+Todo :
+- quand on demande à enVrai de rejouer ce qui a déclenché la détection d'expression (par ex : "En gros, c'est top ce que tu as fait"), le micro reste ouvert et enVrai risque donc de détecter à nouveau l'expression ce qui mène à une boucle détection.
+- il manque un VAD pour éviter que la transcription soit envoyée à Whisper alors que personne ne parle (pour l'instant on écoute en coutinu et on envoie a Whisper un morceau toutes les x secondes). Cela empècherait enVrai de consommer inutilement des ressources.
+- 
