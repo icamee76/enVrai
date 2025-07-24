@@ -1,7 +1,7 @@
 # enVrai en bref
 Un petit programmes en Python pour détecter **les tics de langage** (en vrai, du coup, en gros...). Mais aussi pour s'amuser à **déclencher des sons ou des phrases audio** quand un mot où une expression sont détectés.
-<img width="600" alt="Copie d'écran de l'interface qui présente les statistiques de détection des expressions" src="https://github.com/user-attachments/assets/78d36c76-2988-49ae-863b-b6414a6434d4" />
 
+<kbd><img width="400" alt="Capture d'écran de l'interface qui présente les statistiques de détection des expressions" src="https://github.com/user-attachments/assets/ffbbd542-b0c4-42d8-a6bd-f86cbc5f1e59" /></kbd>
 
 # enVrai ça marche comment ?
 Le script écoute en continu et transcrit en texte (avec **Whisper**, la bibliothèque open source d'Open AI).
