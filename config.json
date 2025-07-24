@@ -1,0 +1,126 @@
+{
+  "whisper_model": "small",
+  "audio_config": {
+    "chunk": 1024,
+    "format": "paInt16",
+    "channels": 1,
+    "rate": 16000,
+    "record_seconds": 3
+  },
+  "expressions": {
+    "en_vrai": {
+      "key": "en_vrai",
+      "name": "En vrai",
+      "patterns": [
+        "en vrai",
+        "envrai"
+      ],
+      "action": "mp3",
+      "mp3_file": "Ta gueule.mp3",
+      "enabled": true
+    },
+    "en_gros": {
+      "key": "en_gros",
+      "name": "En gros",
+      "patterns": [
+        "en gros",
+        "engros"
+      ],
+      "action": "mp3",
+      "mp3_file": "Ta gueule.mp3",
+      "enabled": true
+    },
+    "du_coup": {
+      "key": "du_coup",
+      "name": "Du coup",
+      "patterns": [
+        "du coup",
+        "ducoup"
+      ],
+      "action": "both",
+      "mp3_file": "Ta gueule.mp3",
+      "enabled": true
+    },
+    "location_question": {
+      "key": "location_question",
+      "name": "C'est où ?",
+      "patterns": [
+        "il est où",
+        "c'est où",
+        "où ça"
+      ],
+      "action": "mp3",
+      "mp3_file": "dans ton cul.mp3",
+      "enabled": true
+    },
+    "cantoche": {
+      "key": "cantoche",
+      "name": "Cantoche / Cantine",
+      "patterns": [
+        "cantoche",
+        "cantine",
+        "quand tâche",
+        "quand Tine",
+        "quand Osch",
+        "quentin",
+        "comptache",
+        "Quant à Oche",
+        "contouche",
+        "cantoch",
+        "contoch"
+      ],
+      "action": "mp3",
+      "mp3_file": "Langue de boeuf.mp3",
+      "enabled": true
+    },
+    "loys": {
+      "key": "loys",
+      "name": "Loys",
+      "patterns": [
+        "loïs",
+        "loys",
+        "louis",
+        "lois",
+        "luis"
+      ],
+      "action": "mp3",
+      "mp3_file": "Loys a un MBA.mp3",
+      "enabled": true
+    },
+    "ca_marche_pas": {
+      "key": "ca_marche_pas",
+      "name": "Ca marche pas",
+      "patterns": [
+        "marche pas"
+      ],
+      "action": "mp3",
+      "mp3_file": "Tu t'es chié.mp3",
+      "enabled": true
+    },
+    "do_you_have_the_pentecote": {
+      "action": "mp3",
+      "enabled": true,
+      "key": "do_you_have_the_pentecote",
+      "mp3_file": "Do you have the pentecote.mp3",
+      "name": "Panpan",
+      "patterns": [
+        "Panpan",
+        "pompant",
+        "pom pom",
+        "pampant",
+        "pompon",
+        "pan pan"
+      ]
+    },
+    "casquette": {
+      "name": "Casquette",
+      "patterns": [
+        "casquette",
+        "cascette"
+      ],
+      "action": "mp3",
+      "mp3_file": "Tiens, Elise est parmi nous.mp3",
+      "enabled": true
+    }
+  }
+}

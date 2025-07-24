@@ -1,0 +1,5 @@
+git+https://github.com/openai/whisper.git
+pyaudio>=0.2.11
+numpy>=1.21.0
+flask>=2.3.0
+pygame>=2.5.0

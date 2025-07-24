@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détecteur de Tics - Interface Web</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎤 Détecteur de Tics de Langage</h1>
+            <div class="controls">
+                <button id="startBtn" class="btn btn-success">▶️ Démarrer</button>
+                <button id="stopBtn" class="btn btn-danger">⏹️ Arrêter</button>
+                <span id="status" class="status">Arrêté</span>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="expressions">Expressions</button>
+            <button class="tab-btn" data-tab="stats">Statistiques</button>
+            <button class="tab-btn" data-tab="config">Configuration</button>
+            <button class="tab-btn" data-tab="files">Fichiers MP3</button>
+        </div>
+
+        <div id="expressions" class="tab-content active">
+            <div class="section-header">
+                <h2>Expressions Surveillées</h2>
+                <button id="addExprBtn" class="btn btn-primary">➕ Ajouter</button>
+            </div>
+            <div id="expressionsList" class="expressions-list"></div>
+        </div>
+
+        <div id="stats" class="tab-content">
+            <h2>Statistiques de Session</h2>
+            <div id="statsContent"></div>
+            <h3>Détections Récentes</h3>
+            <div id="recentDetections" class="detections-list"></div>
+        </div>
+
+        <div id="config" class="tab-content">
+            <h2>Configuration</h2>
+            <div class="config-section">
+                <label>
+                    Modèle Whisper:
+                    <select id="whisperModel" class="form-control">
+                        <option value="tiny">Tiny (rapide, moins précis)</option>
+                        <option value="base">Base (équilibré)</option>
+                        <option value="small">Small (précis)</option>
+                        <option value="medium">Medium (très précis)</option>
+                        <option value="large">Large (maximum précision)</option>
+                    </select>
+                </label>
+                <button id="saveConfigBtn" class="btn btn-success">💾 Sauvegarder</button>
+            </div>
+        </div>
+
+        <div id="files" class="tab-content">
+            <h2>Fichiers MP3</h2>
+            <div id="mp3List" class="mp3-list"></div>
+        </div>
+    </div>
+
+    <!-- Modal pour ajouter/modifier une expression -->
+    <div id="expressionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modalTitle">Ajouter une Expression</h3>
+            <form id="expressionForm">
+                <input type="hidden" id="exprKey">
+                
+                <label>
+                    Nom:
+                    <input type="text" id="exprName" class="form-control" required>
+                </label>
+                
+                <label>
+                    Patterns (un par ligne):
+                    <textarea id="exprPatterns" class="form-control" rows="3" required></textarea>
+                </label>
+                
+                <label>
+                    Action:
+                    <select id="exprAction" class="form-control">
+                        <option value="mp3">Jouer MP3</option>
+                        <option value="replay">Réécouter</option>
+                        <option value="both">MP3 puis Réécoute</option>
+                    </select>
+                </label>
+                
+                <label>
+                    Fichier MP3:
+                    <select id="exprMp3File" class="form-control"></select>
+                </label>
+                
+                <label class="checkbox-label">
+                    <input type="checkbox" id="exprEnabled" checked>
+                    Activé
+                </label>
+                
+                <div class="modal-buttons">
+                    <button type="submit" class="btn btn-success">💾 Sauvegarder</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
