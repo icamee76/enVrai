@@ -15,6 +15,7 @@ import sys
 import pygame
 import uuid
 from pathlib import Path
+import webrtcvad  # Nouveau import
 
 class TicDetectorApp:
     def __init__(self, config_file="config.json"):
@@ -40,6 +41,9 @@ class TicDetectorApp:
         self.detection_stats = {expr: 0 for expr in self.config["expressions"]}
         self.session_detections = []
         
+        # VAD - Nouveau
+        self.setup_vad()
+        
         # Initialisation des composants
         pygame.mixer.init()
         
@@ -47,6 +51,62 @@ class TicDetectorApp:
             sys.exit(1)
         if not self.load_whisper_model():
             sys.exit(1)
+    
+    def setup_vad(self):
+        """Initialise le détecteur d'activité vocale"""
+        try:
+            self.vad = webrtcvad.Vad(2)  # Agressivité 0-3 (2 = modéré)
+            self.vad_frame_duration = 30  # 30ms par frame
+            self.vad_frame_size = int(16000 * self.vad_frame_duration / 1000)  # webrtcvad nécessite 16kHz
+            
+            # Paramètres de détection
+            self.voice_threshold = 0.3  # 30% minimum de frames avec voix
+            self.vad_enabled = True
+            
+            print(f"🎤 VAD initialisé - Frame: {self.vad_frame_duration}ms, Seuil: {self.voice_threshold}")
+        except Exception as e:
+            print(f"⚠️ VAD non disponible: {e}")
+            self.vad_enabled = False
+    
+    def has_voice_activity(self, audio_data):
+        """Détecte s'il y a de l'activité vocale dans l'audio"""
+        if not self.vad_enabled:
+            return True  # Si VAD désactivé, traiter tout
+        
+        try:
+            # Convertir au format requis par webrtcvad (16kHz, mono, int16)
+            audio_np = np.frombuffer(audio_data, dtype=np.int16)
+            
+            # Rééchantillonner à 16kHz si nécessaire
+            current_rate = self.config["audio_config"]["rate"]
+            if current_rate != 16000:
+                # Rééchantillonnage simple
+                ratio = 16000 / current_rate
+                new_length = int(len(audio_np) * ratio)
+                audio_np = np.interp(np.linspace(0, len(audio_np), new_length), 
+                                   np.arange(len(audio_np)), audio_np).astype(np.int16)
+            
+            # Analyser par frames de 30ms
+            voice_frames = 0
+            total_frames = 0
+            
+            for i in range(0, len(audio_np) - self.vad_frame_size + 1, self.vad_frame_size):
+                frame = audio_np[i:i + self.vad_frame_size]
+                
+                if len(frame) == self.vad_frame_size:
+                    total_frames += 1
+                    if self.vad.is_speech(frame.tobytes(), 16000):
+                        voice_frames += 1
+            
+            if total_frames == 0:
+                return False
+            
+            voice_ratio = voice_frames / total_frames
+            return voice_ratio >= self.voice_threshold
+            
+        except Exception as e:
+            print(f"⚠️ Erreur VAD: {e}")
+            return True  # En cas d'erreur, traiter quand même
     
     def load_config(self):
         """Charge la configuration depuis le fichier JSON"""
@@ -290,7 +350,7 @@ class TicDetectorApp:
                 frames_per_buffer=self.config["audio_config"]["chunk"]
             )
             
-            print("🎤 Écoute en cours...")
+            print("🎤 Écoute en cours avec VAD...")
             
             frames = []
             frame_count = 0
@@ -330,17 +390,24 @@ class TicDetectorApp:
                 pass
     
     def process_audio_segment(self, audio_data):
-        """Traite un segment audio"""
+        """Traite un segment audio avec VAD"""
         try:
             if self.is_playing:
                 return
                 
-            # Vérification niveau audio
+            # Vérification niveau audio (existant)
             audio_np = np.frombuffer(audio_data, dtype=np.int16)
             if np.max(np.abs(audio_np)) < 1000:
                 return
-                
-            # Transcription
+            
+            # NOUVEAU : Vérification VAD avant Whisper
+            if not self.has_voice_activity(audio_data):
+                print("🔇 Pas de voix détectée - Whisper non appelé")
+                return
+            
+            print("🗣️ Voix détectée - Traitement Whisper...")
+            
+            # Transcription (seulement si voix détectée)
             text = self.transcribe_audio(audio_data)
             
             if text and len(text.strip()) > 2 and not self.is_playing:
@@ -361,8 +428,9 @@ class TicDetectorApp:
         audio_thread.start()
         
         print("\n" + "="*80)
-        print("🎤 Détecteur de tics de langage français (Version MP3)")
+        print("🎤 Détecteur de tics de langage français (Version MP3 + VAD)")
         print(f"🤖 Modèle Whisper: {self.config['whisper_model']}")
+        print(f"🎙️ VAD: {'Activé' if self.vad_enabled else 'Désactivé'}")
         print(f"📂 Enregistrements: {self.recordings_dir}")
         print(f"🎵 MP3: {self.mp3_dir}")
         print("="*80)
