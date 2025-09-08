@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎤 Détecteur de Tics de Langage</h1>
+            <h1>🎤 EnVrai : Détecteur de Tics de Langage</h1>
             <div class="controls">
                 <button id="startBtn" class="btn btn-success">▶️ Démarrer</button>
                 <button id="stopBtn" class="btn btn-danger">⏹️ Arrêter</button>
@@ -42,17 +42,37 @@
         <div id="config" class="tab-content">
             <h2>Configuration</h2>
             <div class="config-section">
-                <label>
-                    Modèle Whisper:
+                
+                <div class="config-item">
+                    <label for="whisperModel">Modèle Whisper:</label>
                     <select id="whisperModel" class="form-control">
                         <option value="tiny">Tiny (rapide, moins précis)</option>
                         <option value="base">Base (équilibré)</option>
                         <option value="small">Small (précis)</option>
                         <option value="medium">Medium (très précis)</option>
-                        <option value="large">Large (maximum précision)</option>
                     </select>
-                </label>
-                <button id="saveConfigBtn" class="btn btn-success">💾 Sauvegarder</button>
+                </div>
+
+                <hr>
+
+                <h3>Détection d'Activité Vocale (VAD)</h3>
+
+                <div class="config-item">
+                    <label for="vadEnabled" class="checkbox-label">
+                        <input type="checkbox" id="vadEnabled">
+                        Activer le VAD (filtre les silences)
+                    </label>
+                </div>
+
+                <div class="config-item">
+                    <label for="vadAggressiveness">
+                        Sensibilité (agressivité du filtre): 
+                        <span id="vadValueLabel" class="slider-value">Normale</span>
+                    </label>
+                    <input type="range" id="vadAggressiveness" min="0" max="3" step="1" class="slider-control">
+                </div>
+
+                <button id="saveConfigBtn" class="btn btn-success">💾 Sauvegarder la configuration</button>
             </div>
         </div>
 
@@ -101,7 +121,7 @@
                 
                 <div class="modal-buttons">
                     <button type="submit" class="btn btn-success">💾 Sauvegarder</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                    <button type="button" id="cancelBtn" class="btn btn-secondary">Annuler</button>
                 </div>
             </form>
         </div>

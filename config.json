@@ -7,6 +7,10 @@
     "rate": 16000,
     "record_seconds": 3
   },
+  "vad_config": {
+    "enabled": true,
+    "aggressiveness": 2
+  },
   "expressions": {
     "en_vrai": {
       "key": "en_vrai",

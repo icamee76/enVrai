@@ -15,7 +15,9 @@ import sys
 import pygame
 import uuid
 from pathlib import Path
-import webrtcvad  # Nouveau import
+import webrtcvad
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='pygame.*')
 
 class TicDetectorApp:
     def __init__(self, config_file="config.json"):
@@ -53,17 +55,32 @@ class TicDetectorApp:
             sys.exit(1)
     
     def setup_vad(self):
-        """Initialise le détecteur d'activité vocale"""
+        """Initialise le détecteur d'activité vocale en lisant la config."""
         try:
-            self.vad = webrtcvad.Vad(2)  # Agressivité 0-3 (2 = modéré)
-            self.vad_frame_duration = 30  # 30ms par frame
-            self.vad_frame_size = int(16000 * self.vad_frame_duration / 1000)  # webrtcvad nécessite 16kHz
+            # Récupère la configuration VAD, avec des valeurs par défaut robustes
+            vad_config = self.config.get("vad_config", {
+                "enabled": True,
+                "aggressiveness": 2
+            })
             
-            # Paramètres de détection
-            self.voice_threshold = 0.3  # 30% minimum de frames avec voix
-            self.vad_enabled = True
+            self.vad_enabled = vad_config.get("enabled", True)
             
-            print(f"🎤 VAD initialisé - Frame: {self.vad_frame_duration}ms, Seuil: {self.voice_threshold}")
+            if not self.vad_enabled:
+                print("🎤 VAD est désactivé dans la configuration.")
+                return
+
+            aggressiveness = vad_config.get("aggressiveness", 2)
+            if not 0 <= aggressiveness <= 3:
+                print(f"⚠️ Agressivité VAD invalide ({aggressiveness}), utilisation de la valeur 2 par défaut.")
+                aggressiveness = 2
+
+            self.vad = webrtcvad.Vad(aggressiveness)
+            self.vad_frame_duration = 30
+            self.vad_frame_size = int(16000 * self.vad_frame_duration / 1000)
+            self.voice_threshold = 0.3
+            
+            print(f"🎤 VAD initialisé - Agressivité: {aggressiveness}, État: {'Activé' if self.vad_enabled else 'Désactivé'}")
+
         except Exception as e:
             print(f"⚠️ VAD non disponible: {e}")
             self.vad_enabled = False
@@ -229,24 +246,34 @@ class TicDetectorApp:
             self.is_playing = False
             return False
     
-    def is_duplicate_detection(self, expression_key, text):
-        """Vérifie si c'est une détection en doublon"""
+    def is_duplicate_detection(self, expression_key):
+        """
+        Vérifie si la même expression a été détectée il y a un court instant,
+        pour éviter les doublons dus à l'overlap des segments audio.
+        """
         current_time = time.time()
-        detection_key = f"{expression_key}:{text[:20]}"
         
+        # Le cooldown doit être plus long que l'overlap, mais plus court que le segment total.
+        # Un bon compromis est 80% de la durée d'enregistrement d'un segment.
+        cooldown_period = self.config["audio_config"]["record_seconds"] * 0.8
+        
+        # On vérifie si une détection pour la MÊME CLÉ a eu lieu dans la période de cooldown
         for timestamp, key in self.last_detections:
-            if key == detection_key and current_time - timestamp < 5:
+            if key == expression_key and (current_time - timestamp) < cooldown_period:
+                # print(f"🔹 Détection de '{expression_key}' ignorée (cooldown de l'overlap)") # Ligne de debug utile
                 return True
         
-        self.last_detections.append((current_time, detection_key))
+        # Ce n'est pas un doublon, on enregistre cette détection pour les prochaines vérifications
+        self.last_detections.append((current_time, expression_key))
         return False
     
     def detect_expressions(self, text, audio_data):
-        """Détecte les expressions dans le texte"""
+        """Détecte les expressions dans le texte de manière insensible à la casse."""
         if not text or self.is_playing:
             return
             
-        text_lower = text.lower()
+        # La conversion en minuscules n'est plus nécessaire ici
+        # text_lower = text.lower() 
         
         for expr_key, expr_config in self.config["expressions"].items():
             if not expr_config.get("enabled", True):
@@ -255,10 +282,11 @@ class TicDetectorApp:
             # Vérification des patterns
             total_matches = 0
             for pattern in expr_config["patterns"]:
-                matches = re.findall(pattern, text_lower)
+                # On ajoute le drapeau re.IGNORECASE pour rendre la recherche insensible à la casse
+                matches = re.findall(pattern, text, re.IGNORECASE)
                 total_matches += len(matches)
             
-            if total_matches > 0 and not self.is_duplicate_detection(expr_key, text):
+            if total_matches > 0 and not self.is_duplicate_detection(expr_key):
                 # Création de l'info de détection
                 detection_info = {
                     'id': str(uuid.uuid4()),
@@ -287,7 +315,7 @@ class TicDetectorApp:
                     daemon=True
                 ).start()
                 
-                return  # Une seule réaction par segment
+                return
     
     def execute_action(self, detection_info):
         """Exécute l'action définie pour la détection"""
@@ -358,11 +386,21 @@ class TicDetectorApp:
             
             while self.is_recording:
                 try:
+                    # Si un son est en cours de lecture (MP3 ou replay)
+                    if self.is_playing:
+                        # On vide le buffer pour ne pas analyser ce qui a été joué
+                        frames = []
+                        frame_count = 0
+                        # On attend un court instant pour ne pas surcharger le CPU
+                        time.sleep(0.1)
+                        # On passe à la prochaine itération de la boucle
+                        continue
+
                     data = stream.read(self.config["audio_config"]["chunk"], exception_on_overflow=False)
                     frames.append(data)
                     frame_count += 1
                     
-                    if frame_count >= frames_per_segment and not self.is_playing:
+                    if frame_count >= frames_per_segment:
                         audio_data = b''.join(frames)
                         
                         threading.Thread(
@@ -390,31 +428,35 @@ class TicDetectorApp:
                 pass
     
     def process_audio_segment(self, audio_data):
-        """Traite un segment audio avec VAD"""
+        """Traite un segment audio, le transcrit et affiche le résultat horodaté."""
         try:
             if self.is_playing:
                 return
                 
-            # Vérification niveau audio (existant)
+            # 1. Vérification du niveau audio pour ignorer le bruit de fond
             audio_np = np.frombuffer(audio_data, dtype=np.int16)
             if np.max(np.abs(audio_np)) < 1000:
                 return
             
-            # NOUVEAU : Vérification VAD avant Whisper
+            # 2. Vérification de l'activité vocale (VAD)
+            # Si pas de voix, on ne fait rien et on n'affiche rien.
             if not self.has_voice_activity(audio_data):
-                print("🔇 Pas de voix détectée - Whisper non appelé")
                 return
             
-            print("🗣️ Voix détectée - Traitement Whisper...")
-            
-            # Transcription (seulement si voix détectée)
+            # 3. Transcription (uniquement si voix détectée)
             text = self.transcribe_audio(audio_data)
             
-            if text and len(text.strip()) > 2 and not self.is_playing:
-                timestamp = datetime.now().strftime("%H:%M:%S")
+            # 4. Affichage horodaté systématique du résultat de Whisper
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            if text and text.strip():
+                # Affiche le texte si Whisper a produit un résultat
                 print(f"[{timestamp}] 📝 {text}")
-                
-                # Détection des expressions
+            else:
+                # Affiche un message si Whisper n'a rien retourné
+                print(f"[{timestamp}] 🔇 [Aucun texte détecté]")
+            
+            # 5. Détection des expressions (uniquement si le texte est pertinent)
+            if text and len(text.strip()) > 2 and not self.is_playing:
                 self.detect_expressions(text, audio_data)
                     
         except Exception as e:
@@ -428,7 +470,7 @@ class TicDetectorApp:
         audio_thread.start()
         
         print("\n" + "="*80)
-        print("🎤 Détecteur de tics de langage français (Version MP3 + VAD)")
+        print("🎤 EnVrai : détecteur de tics de langage français (Version MP3 + VAD)")
         print(f"🤖 Modèle Whisper: {self.config['whisper_model']}")
         print(f"🎙️ VAD: {'Activé' if self.vad_enabled else 'Désactivé'}")
         print(f"📂 Enregistrements: {self.recordings_dir}")
@@ -484,7 +526,16 @@ def main():
     
     if args.web:
         from web_interface import create_app
+        import threading
+        import logging
+
         app_instance = TicDetectorApp(args.config)
+
+        log = logging.getLogger('werkzeug')
+        log.setLevel(logging.ERROR)
+        
+        threading.Thread(target=app_instance.start_listening, daemon=True).start()
+        
         web_app = create_app(app_instance)
         print("🌐 Interface web disponible sur http://localhost:5010")
         web_app.run(host='0.0.0.0', port=5010, debug=True)

@@ -448,3 +448,85 @@ input:checked + .slider:before {
         justify-content: center;
     }
 }
+
+.config-section {
+    max-width: 600px; 
+}
+
+.config-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px; 
+    gap: 20px; 
+}
+
+.config-item label {
+    flex: 1; 
+    font-weight: 500;
+    color: #333;
+}
+
+.slider-container {
+    flex-basis: 250px; 
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.slider-value {
+    font-weight: bold;
+    color: #3498db;
+    min-width: 60px; 
+    text-align: right;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0; 
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #3498db; 
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    margin-top: -6px; 
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #3498db;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    cursor: pointer;
+}
+
+#saveConfigBtn {
+    display: block; 
+    margin-top: 30px; 
+}
+
+@media (max-width: 768px) {
+    .config-item {
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 10px;
+    }
+
+    .slider-container {
+        width: 100%;
+    }
+}

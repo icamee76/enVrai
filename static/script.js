@@ -21,9 +21,22 @@ class TicDetectorInterface {
         document.getElementById('addExprBtn').addEventListener('click', () => this.openAddModal());
         document.getElementById('expressionForm').addEventListener('submit', (e) => this.saveExpression(e));
         document.querySelector('.close').addEventListener('click', () => this.closeModal());
+        document.getElementById('cancelBtn').addEventListener('click', () => this.closeModal());
         
         // Configuration
         document.getElementById('saveConfigBtn').addEventListener('click', () => this.saveConfig());
+
+        const vadSlider = document.getElementById('vadAggressiveness');
+        const vadLabel = document.getElementById('vadValueLabel');
+        const sensitivityMap = {
+            '0': 'Très sensible (mode calme)',
+            '1': 'Sensible',
+            '2': 'Normal',
+            '3': 'Peu sensible (mode bruyant)'
+        };
+        vadSlider.addEventListener('input', () => {
+            vadLabel.textContent = sensitivityMap[vadSlider.value] || 'Normal';
+        });
         
         // Fermeture modal si clic extérieur
         window.addEventListener('click', (e) => {
@@ -71,6 +84,15 @@ class TicDetectorInterface {
             
             // Mettre à jour l'interface
             document.getElementById('whisperModel').value = this.currentConfig.whisper_model || 'base';
+
+            const vadConfig = this.currentConfig.vad_config || { enabled: true, aggressiveness: 2 };
+            document.getElementById('vadEnabled').checked = vadConfig.enabled;
+            
+            const vadSlider = document.getElementById('vadAggressiveness');
+            vadSlider.value = vadConfig.aggressiveness;
+            
+            // Déclencher l'événement 'input' pour mettre à jour le label
+            vadSlider.dispatchEvent(new Event('input'));
             
         } catch (error) {
             console.error('Erreur chargement config:', error);
@@ -365,7 +387,11 @@ class TicDetectorInterface {
     async saveConfig() {
         try {
             const newConfig = {
-                whisper_model: document.getElementById('whisperModel').value
+                whisper_model: document.getElementById('whisperModel').value,
+                vad_config: {
+                    enabled: document.getElementById('vadEnabled').checked,
+                    aggressiveness: parseInt(document.getElementById('vadAggressiveness').value, 10)
+                }
             };
             
             await fetch('/api/config', {

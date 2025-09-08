@@ -26,7 +26,14 @@ def create_app(tic_detector_app):
             # Recharger le modèle Whisper si nécessaire
             if 'whisper_model' in new_config:
                 app.tic_detector.load_whisper_model()
-            
+
+            # --- AJOUTER CE BLOC ---
+            # Réinitialiser le VAD si ses paramètres ont changé
+            if 'vad_config' in new_config:
+                print("🔄 Ré-initialisation du VAD avec les nouveaux paramètres...")
+                app.tic_detector.setup_vad()
+            # --- FIN DE L'AJOUT ---
+
             return jsonify({'success': True})
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)})
